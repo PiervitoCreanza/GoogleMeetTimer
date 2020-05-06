@@ -242,7 +242,7 @@ const style = `
 .timer-body {
     display: flex;
     background-color: white; 
-    /*width: fit-content;*/
+    width: fit-content;
     border-radius: 0 0 8px 8px;
     padding: 0 20px 0 20px;
     text-align: center;
