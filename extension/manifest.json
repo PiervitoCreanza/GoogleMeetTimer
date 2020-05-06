@@ -2,7 +2,7 @@
   "name": "Google Meet Timer",  
   "description": "Timer extension for google meet",
   "default_locale": "en",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "DGT",
   "permissions": ["storage"],
   "icons": {
