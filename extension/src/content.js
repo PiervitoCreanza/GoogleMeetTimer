@@ -66,6 +66,16 @@ var meetingId = null
 const main = () => {
     console.log('[google-timer] Plugin started!')
 
+    // Provide compability to Google Meet Attendance extension
+    let styles = document.styleSheets    
+    for (let i = 0; i < styles.length; i++) {
+        if (styles[i].href === "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css") {
+            console.log('[google-timer] Set compability mode to google meet attendance')
+            styles[i].disabled=true;
+            break; 
+        }
+    }
+
     document.body.insertAdjacentHTML('beforeend', style) // Inject css
     document.body.insertAdjacentHTML('beforeend', timerHtml) // Inject html 
 
