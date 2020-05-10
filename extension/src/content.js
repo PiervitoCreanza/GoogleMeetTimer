@@ -387,9 +387,9 @@ const style = `
 `
 
 const message = `
-<div class="MvD9Jd ncMv2e timer-banner" id="timer-banner" role="alert" aria-label="Stai parlando? Il microfono è disattivato.">
+<div class="MvD9Jd ncMv2e timer-banner" id="timer-banner" role="alert">
     <div class="dj3AKc">
-        <p class="McXdrf">Il timer è scaduto! Vuoi chiudere la chiamata?</p>
+        <p class="McXdrf">${chrome.i18n.getMessage("timerElapsed")}</p>
     </div>
     <div role="button" id="timer-banner-button" class="uArJ5e Y5FYJe cjq2Db HZJnJ L8jh1" aria-label="Chiudi" aria-disabled="false" tabindex="0" data-tooltip="Chiudi" data-tooltip-vertical-offset="-12" data-tooltip-horizontal-offset="0">
         <div class="PDXc1b MbhUzd" jsname="ksKsZd"></div><span jsslot="" class="XuQwKc"><span class="GmuOkf"><span class="DPvwYc tEYUvc" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" focusable="false" class="CEJND cIGbvc NMm5M"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"></path></svg></span></span>

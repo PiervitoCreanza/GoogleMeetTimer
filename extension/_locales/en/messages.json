@@ -8,11 +8,15 @@
       "description":"The description of the application, displayed in the web store."
     },
     "timerUpdate": {
-        "message": "updated the timer.",
-        "description": "Displayed when the timer is updated."
+      "message": "updated the timer.",
+      "description": "Displayed when the timer is updated."
     },
     "timerSet": {
-        "message": "<b>A timer has been set</b> for the call.",
-        "description": "Displayed when a timer has been already set for the call."
+      "message": "<b>A timer has been set</b> for the call.",
+      "description": "Displayed when a timer has been already set for the call."
+    },
+    "timerElapsed": {
+      "message": "Hey, Time is up! Do you want to leave the call?",
+      "description": "Displayes when the countdown has expired."
     }
 }

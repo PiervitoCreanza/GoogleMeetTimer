@@ -14,5 +14,9 @@
     "timerSet": {
         "message": "<b>E' stato impostato un timer</b> per la chiamata.",
         "description": "Displayed when a timer has been already set for the call."
+    },
+    "timerElapsed": {
+      "message": "Il timer è scaduto! Vuoi chiudere la chiamata?",
+      "description": "Displayes when the countdown has expired."
     }
 }
