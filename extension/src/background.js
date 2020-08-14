@@ -1,0 +1,1 @@
+chrome.runtime.setUninstallURL('https://timer.digitilab.it/uninstall')
