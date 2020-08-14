@@ -2,11 +2,10 @@
 Sentry.init({ dsn: 'https://fa1f7bf7757b436fb5527a591a84ae38@o434279.ingest.sentry.io/5391085' }); // Init sentry
 
 const socket = io.connect('https://timer.digitilab.it');
-
 var connect_error = false
-socket.io.on("connect_error", () => {
+socket.io.on("connect_error", () => {    
+    !connect_error && Sentry.captureMessage('socket.io connection error')
     connect_error = true
-    Sentry.captureMessage('socket.io connection error');
 })
 // Interval functions
 const checkCallOn = () => {
