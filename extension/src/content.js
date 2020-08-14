@@ -74,16 +74,6 @@ var meetingId = null
 const main = () => {
     console.log('[google-timer] Plugin started!')
 
-    // Provide compability to Google Meet Attendance extension
-    let styles = document.styleSheets    
-    for (let i = 0; i < styles.length; i++) {
-        if (styles[i].href === "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css") {
-            console.log('[google-timer] Set compability mode to google meet attendance')
-            styles[i].disabled=true;
-            break; 
-        }
-    }
-
     document.body.insertAdjacentHTML('beforeend', style) // Inject css
     document.body.insertAdjacentHTML('beforeend', timerHtml) // Inject html 
 
@@ -227,11 +217,11 @@ const timerHtml = `
                 </span>
             </div>
             <div class="timer-container-settings" id="timer-settings-container" style="display: none;">
-                <input class="timer-input" placeholder="00" name="time" id="hh" autocomplete="off"><p class="timer-label">h</p>
+                <input class="timer-input browser-default" placeholder="00" name="time" id="hh" autocomplete="off" type="custom"><p class="timer-label">h</p>
                 <div class="qO3Z3c timer-divider"></div>
-                <input class="timer-input" placeholder="00" name="time" id="mm" autocomplete="off"><p class="timer-label">min</p>
+                <input class="timer-input browser-default" placeholder="00" name="time" id="mm" autocomplete="off" type="custom"><p class="timer-label">min</p>
                 <div class="qO3Z3c timer-divider"></div>
-                <input class="timer-input" placeholder="00" name="time" id="ss" autocomplete="off"><p class="timer-label">sec</p>
+                <input class="timer-input browser-default" placeholder="00" name="time" id="ss" autocomplete="off" type="custom"><p class="timer-label">sec</p>
                 <div class="qO3Z3c timer-divider"></div>
                 <div class="center">
                     <svg width="24" height="24" id="timer-confirm">
@@ -276,6 +266,7 @@ const style = `
     transition: height .5s ease-in-out, max-width .5s ease-in-out;
     overflow: hidden;
     flex-direction: column;
+    box-sizing: content-box;
 }
 .text {
     color: white;
