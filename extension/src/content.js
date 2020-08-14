@@ -1,6 +1,13 @@
 // content.js
+Sentry.init({ dsn: 'https://fa1f7bf7757b436fb5527a591a84ae38@o434279.ingest.sentry.io/5391085' }); // Init sentry
 
 const socket = io.connect('https://timer.digitilab.it');
+
+var connect_error = false
+socket.io.on("connect_error", () => {
+    connect_error = true
+    Sentry.captureMessage('socket.io connection error');
+})
 // Interval functions
 const checkCallOn = () => {
     let menu = document.getElementsByClassName('Jrb8ue')
@@ -15,9 +22,11 @@ const checkCallOn = () => {
                 main()
             } else {
                 console.log('[google-timer] Error: Unable to get meeting id')
+                Sentry.captureMessage('Unable to get meeting id');
             }
         } else {
             console.log('[google-timer] Error: Unable to get meeting id')
+            Sentry.captureMessage('Unable to get meeting id');
         }        
     }    
 }
@@ -133,6 +142,7 @@ const main = () => {
                     socket.emit('sync_time', {id: meetingId, endTime: Date.now() + result.seconds*1000, senderName: userName, userImage})
                 } else {
                     console.warn('[google-timer] Unable to sync time')
+                    Sentry.captureMessage('Unable to sync time');
                 }
             }            
           });
@@ -162,6 +172,7 @@ const timer = (seconds) => {
                 document.getElementById('timer-banner-button').addEventListener("click", () => document.getElementById('timer-banner').outerHTML = "")
             } else {
                 console.log('[google-timer] Error: unable to show the finish timer-confirm (no element by class)')
+                Sentry.captureMessage('unable to show the finish timer-confirm (no element by class');
             }        
         }
     }, 1000);
