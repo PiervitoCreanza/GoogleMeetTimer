@@ -16,7 +16,46 @@
       "description": "Displayed when a timer has been already set for the call."
     },
     "timerElapsed": {
-      "message": "Hey, Time is up! Do you want to leave the call?",
-      "description": "Displayes when the countdown has expired."
+      "message": "Time is up!",
+      "description": "Displayed when the countdown has expired."
+    },
+    "settings": {
+      "message": "Settings"
+    },
+    "pluginStatus": {
+      "message": "Plugin status"
+    },
+    "ps_Description": {
+      "message": "Enable or disable the plugin in one click."
+    },
+    "ps_1": {
+      "message": "Enabled/Disabled"
+    },
+    "additionalSettings": {
+      "message": "Additional settings"
+    },
+    "as_description": {
+      "message": "These are more advanced settings, if you have no special needs, we strongly suggest to leave them as they are."
+    },
+    "as_1": {
+      "message": "Play a sound when time is up"
+    },
+    "as_2": {
+      "message": "Display time as countdown"
+    },
+    "as_3": {
+      "message": "Remember last time set"
+    },
+    "as_4": {
+      "message": "Hide timer to other members"
+    },
+    "support": {
+      "message": "Support us"
+    },
+    "s_description": {
+      "message": "Do you like Google Meet Timer?"
+    },
+    "s_button": {
+      "message": "Buy us a coffee!"
     }
 }

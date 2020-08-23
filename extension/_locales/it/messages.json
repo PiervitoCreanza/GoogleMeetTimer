@@ -16,7 +16,46 @@
         "description": "Displayed when a timer has been already set for the call."
     },
     "timerElapsed": {
-      "message": "Il timer è scaduto! Vuoi chiudere la chiamata?",
+      "message": "Tempo scaduto!",
       "description": "Displayes when the countdown has expired."
+    },
+    "settings": {
+      "message": "Impostazioni"
+    },
+    "pluginStatus": {
+      "message": "Stato del plugin"
+    },
+    "ps_Description": {
+      "message": "Attiva o disattiva il plugin in un click."
+    },
+    "ps_1": {
+      "message": "Attivo/Disattivo"
+    },
+    "additionalSettings": {
+      "message": "Impostazioni avanzate"
+    },
+    "as_description": {
+      "message": "Ti consigliamo di non modificare queste impostazioni."
+    },
+    "as_1": {
+      "message": "Suona allo scadere del tempo"
+    },
+    "as_2": {
+      "message": "Conto alla rovescia"
+    },
+    "as_3": {
+      "message": "Ricorda l'ultimo tempo impostato"
+    },
+    "as_4": {
+      "message": "Nascondi agli altri partecipanti"
+    },
+    "support": {
+      "message": "Supportaci"
+    },
+    "s_description": {
+      "message": "Ti piace Google Meet Timer?"
+    },
+    "s_button": {
+      "message": "Offrici un caffè!"
     }
 }
