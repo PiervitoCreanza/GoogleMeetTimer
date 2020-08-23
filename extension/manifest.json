@@ -2,7 +2,7 @@
   "name": "__MSG_appName__",
   "description": "__MSG_appDesc__",
   "default_locale": "en",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "DGT",
   "permissions": ["storage"],
   "icons": {
@@ -15,12 +15,18 @@
   "background": {
     "scripts": ["src/background.js"]
   },
+  "browser_action": {
+    "default_popup": "src/popup.html"
+  },
+  "web_accessible_resources": [
+    "src/sounds/ringtone.mp3"
+  ],
   "content_scripts": [
     {
       "matches": [
         "*://*.meet.google.com/*"
       ],
-      "js": ["src/socket.io-2.3.0.js", "src/sentry-5.21.1.js", "./src/content.js"]
+      "js": ["src/sdk/socket.io-2.3.0.js", "src/sdk/sentry-5.21.1.js", "./src/content.js"]
     }
   ]
 }
