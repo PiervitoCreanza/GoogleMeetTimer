@@ -126,8 +126,8 @@ const main = () => {
                 timer(result.seconds)
                 displaySettings(false)
                 if (socket.connected && !preferences.private) {
-                    const dataScript = contains("script", "ds:7")
-                    const userData = JSON.parse(dataScript[1].text.match(/\[[^\}]*/)[0])
+                    const dataScript = contains("script", "ds:8")
+                    const userData = JSON.parse(dataScript[1].text.match(/(?<=data:).*(?:])/)[0])
                     let userName = userData[6] || "" 
                     let userImage = userData[5] || ""
                     socket.emit('sync_time', {id: meetingId, endTime: Date.now() + result.seconds*1000, senderName: userName, userImage})
