@@ -5,14 +5,12 @@ Sentry.init({ dsn: 'https://fa1f7bf7757b436fb5527a591a84ae38@o434279.ingest.sent
 var checkCallOnInterval = null
 var checkCallOffInterval = null
 var timerInterval = null
-var elapsedTimeInterval = null
 var meetingId = null
 var isRunning = false
 var preferences = null
 var ringtone = new Audio(chrome.extension.getURL('src/sounds/ringtone.mp3'))
 var dialogTimeout = null
 var isPaused = false
-var elapsedTime = 0
 
 var socket = io.connect('https://timer.digitilab.it'); // Connect to websocket
 
@@ -63,7 +61,6 @@ const startPlugin = () => {
 
 const main = () => {
     console.log('[google-timer] Plugin started!')
-    elapsedTimeInterval = setInterval(() => elapsedTime ++, 1000); // Start counting time
 
     document.body.insertAdjacentHTML('beforeend', style) // Inject css
     document.body.insertAdjacentHTML('beforeend', timerHtml) // Inject html 
@@ -257,17 +254,11 @@ const checkCallOff = () => {
     let menu = document.getElementsByClassName('Jrb8ue')
     if (!menu.length) {
         console.log('[google-timer] Call off')
-        let hh = zeroFill(Math.floor(elapsedTime / 3600))
-        let mm = zeroFill(Math.floor(elapsedTime / 60) % 60)
-        let ss = zeroFill(Math.floor((elapsedTime % 60)))
-        console.log(hh, mm, ss)
         socket.close() // Close the websocket
         clearInterval(checkCallOffInterval)
         checkCallOffInterval = null
         clearInterval(timerInterval)
         timerInterval = null
-        clearInterval(elapsedTimeInterval)
-        elapsedTimeInterval = null
         displayTimer(false)
     }
 }
