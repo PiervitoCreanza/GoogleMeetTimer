@@ -73,15 +73,15 @@ const main = () => {
             document.getElementById('time').innerHTML = "00:00"
             result.seconds = 0
         }
-        socket.connected && socket.emit('new_meet', {id: meetingId, endTime: Date.now() + result.seconds*1000}); // Join the socket.io room
+        socket.connected && socket.emit('new_meet', {id: meetingId, endTime: Date.now() + result.seconds*1000, seconds: result.seconds}); // Join the socket.io room
     });
 
-    socket.on('update_time', ({endTime, senderName, userImage}) => {
+    socket.on('update_time', ({endTime, senderName, userImage, seconds}) => {
         let timeRemaining = Math.round((endTime - Date.now()) /1000) // Get the remaining seconds
         if (timeRemaining > 0) { // If it is not too late
             clearInterval(timerInterval) // Reset the timer
             timerInterval = null
-            timer(timeRemaining) // Start the new timer
+            timer(timeRemaining, seconds) // Start the new timer
             notification(senderName, userImage) // Notify the user
         }
     })
@@ -130,7 +130,7 @@ const main = () => {
                     const userData = JSON.parse(dataScript[1].text.match(/(?<=data:).*(?:])/)[0])
                     let userName = userData[6] || "" 
                     let userImage = userData[5] || ""
-                    socket.emit('sync_time', {id: meetingId, endTime: Date.now() + result.seconds*1000, senderName: userName, userImage})
+                    socket.emit('sync_time', {id: meetingId, endTime: Date.now() + result.seconds*1000, senderName: userName, userImage, seconds: result.seconds})
                 } else if (!preferences.private){
                     console.warn(`[google-timer] Unable to sync time`)
                     Sentry.captureMessage('Unable to sync time');
@@ -143,13 +143,13 @@ const main = () => {
     })  */
 }
 
-const timer = (seconds) => {
+const timer = (seconds, totalSeconds) => {
     clearInterval(timerInterval)
     timerInterval = null
     closeDialog()
     displayStopButton(true)
     setTimer(preferences.countdown ? seconds : 0) // If countdown show totalTime else show 0
-    var totalTime = seconds 
+    var totalTime = totalSeconds || seconds 
     var isTimeUp = false
     timerInterval = setInterval(function(){
         if (!isPaused) {
