@@ -1,333 +1,381 @@
 // content.js
-Sentry.init({ dsn: 'https://fa1f7bf7757b436fb5527a591a84ae38@o434279.ingest.sentry.io/5391085' }); // Init sentry
+
+Sentry.init({
+  dsn: "https://fa1f7bf7757b436fb5527a591a84ae38@o434279.ingest.sentry.io/5391085",
+}); // Init sentry
 
 // Declare global variables
-var checkCallOnInterval = null
-var checkCallOffInterval = null
-var timerInterval = null
-var meetingId = null
-var isRunning = false
-var preferences = null
-var ringtone = new Audio(chrome.extension.getURL('src/sounds/ringtone.mp3'))
-var dialogTimeout = null
-var isPaused = false
+var checkCallOnInterval = null;
+var checkCallOffInterval = null;
+var timerInterval = null;
+var meetingId = null;
+var isRunning = false;
+var preferences = null;
+var ringtone = new Audio(chrome.extension.getURL("src/sounds/ringtone.mp3"));
+var dialogTimeout = null;
+var isPaused = false;
 
-var socket = io.connect('https://timer.digitilab.it'); // Connect to websocket
+var socket = io.connect("https://timer.digitilab.it"); // Connect to websocket
 
-chrome.storage.sync.get(['enabled', 'sound', 'countdown', 'remember', 'private'], function(result) { // Load saved settings
-    preferences = result // Load settings as global variable
+chrome.storage.sync.get(
+  ["enabled", "sound", "countdown", "remember", "private"],
+  function (result) {
+    // Load saved settings
+    preferences = result; // Load settings as global variable
     if (preferences.enabled !== false) {
-        startPlugin()
+      startPlugin();
     }
-});
+  }
+);
 
 // -- Chrome message api listener -- //
-chrome.runtime.onMessage.addListener(msg => { // Listen for messages from popup.html
-    preferences[msg.key] = msg.value // Update loaded settings
-    
-    if (preferences.enabled && !isRunning) {
-        startPlugin()
-    } else if (!preferences.enabled && isRunning) { // We need to remove the timer
-        let timer = document.getElementById('timer-plugin')
-        let style = document.getElementById('timer-style')
-        if (timer && style) {
-            timer.remove()
-            style.remove()
-            closeDialog()
-            clearInterval(timerInterval)
-            timerInterval = null
-            clearInterval(checkCallOffInterval)
-            checkCallOffInterval = null
-            clearInterval(checkCallOnInterval)
-            checkCallOnInterval = null
-            isRunning = false
-            socket.disconnect()
-        }
-    } else if (msg.key === "private" && msg.value === true) {
-        socket.disconnect()
-    } else if (msg.key === "private" && msg.value === false) {
-        socket.connect()
+chrome.runtime.onMessage.addListener((msg) => {
+  // Listen for messages from popup.html
+  preferences[msg.key] = msg.value; // Update loaded settings
+
+  if (preferences.enabled && !isRunning) {
+    startPlugin();
+  } else if (!preferences.enabled && isRunning) {
+    // We need to remove the timer
+    let timer = document.getElementById("timer-plugin");
+    let style = document.getElementById("timer-style");
+    if (timer && style) {
+      timer.remove();
+      style.remove();
+      closeDialog();
+      clearInterval(timerInterval);
+      timerInterval = null;
+      clearInterval(checkCallOffInterval);
+      checkCallOffInterval = null;
+      clearInterval(checkCallOnInterval);
+      checkCallOnInterval = null;
+      isRunning = false;
+      socket.disconnect();
     }
+  } else if (msg.key === "private" && msg.value === true) {
+    socket.disconnect();
+  } else if (msg.key === "private" && msg.value === false) {
+    socket.connect();
+  }
 });
 
 // -- Main functions -- //
 const startPlugin = () => {
-    isRunning = true
-    if (preferences.private === true) {
-        socket.disconnect()
-    }    
-    checkCallOnInterval = setInterval(checkCallOn, 250) // Start a loop until a call is entered
-}
+  isRunning = true;
+  if (preferences.private === true) {
+    socket.disconnect();
+  }
+  checkCallOnInterval = setInterval(checkCallOn, 250); // Start a loop until a call is entered
+};
 
 const main = () => {
-    console.log('[google-timer] Plugin started!')
+  console.log("[google-timer] Plugin started!");
 
-    document.body.insertAdjacentHTML('beforeend', style) // Inject css
-    document.body.insertAdjacentHTML('beforeend', timerHtml) // Inject html 
-    
-    chrome.storage.local.get(['seconds'], (result) => { // Check if default time is set
-        if (result.seconds && preferences.remember) { // If remember is true in settings
-            timer(result.seconds)
-        } else { // Set timer to 00:00
-            document.getElementById('time').style.color = "#5f6368"
-            document.getElementById('time').innerHTML = "00:00"
-            result.seconds = 0
-        }
-        socket.connected && socket.emit('new_meet', {id: meetingId, endTime: Date.now() + result.seconds*1000, seconds: result.seconds}); // Join the socket.io room
-    });
+  document.body.insertAdjacentHTML("beforeend", style); // Inject css
+  document.body.insertAdjacentHTML("beforeend", timerHtml); // Inject html
 
-    socket.on('update_time', ({endTime, senderName, userImage, seconds}) => {
-        let timeRemaining = Math.round((endTime - Date.now()) /1000) // Get the remaining seconds
-        if (timeRemaining > 0) { // If it is not too late
-            clearInterval(timerInterval) // Reset the timer
-            timerInterval = null
-            timer(timeRemaining, seconds) // Start the new timer
-            notification(senderName, userImage) // Notify the user
-        }
-    })
+  chrome.storage.local.get(["seconds"], (result) => {
+    // Check if default time is set
+    if (result.seconds && preferences.remember) {
+      // If remember is true in settings
+      timer(result.seconds);
+    } else {
+      // Set timer to 00:00
+      document.getElementById("time").style.color = "#5f6368";
+      document.getElementById("time").innerHTML = "00:00";
+      result.seconds = 0;
+    }
+    socket.connected &&
+      socket.emit("new_meet", {
+        id: meetingId,
+        endTime: Date.now() + result.seconds * 1000,
+        seconds: result.seconds,
+      }); // Join the socket.io room
+  });
 
-    // ----- LISTENERS ----- //
-    document.getElementById('google-timer').addEventListener('mouseover', () => {
-        timerInterval === null && displaySettings(true) // If timer is not set open settings 
-    }) 
-    document.getElementById('google-timer').addEventListener('mouseleave', () => {
-        displaySettings(false)
-    })
-    document.getElementById('timer-stop').addEventListener('click', () => {
-        if (timerInterval !== null || timerInterval !== undefined) {
-            clearInterval(timerInterval) 
-            timerInterval = null
-            closeDialog() 
-            document.getElementById('time').style.color = "#5f6368"
-            document.getElementById('time').innerHTML = "00:00"
-            displaySettings(true)
-            displayStopButton(false)
-        }
-    })
-    window.addEventListener('keyup', (e) => { // If keys are pressed
-        if (e.target.offsetParent) {
-            if (e.target.offsetParent.id === 'google-timer') { // If they are pressed in the plugin
-                clearInterval(timerInterval)
-                timerInterval = null
-                let hh = document.getElementById('hh').value || 0// get hh, mm, ss
-                let mm = document.getElementById('mm').value || 0
-                let ss = document.getElementById('ss').value || 0
-                let seconds = parseInt(hh)*3600 + parseInt(mm)*60 + parseInt(ss) // Get seconds
-                setTimer(seconds) // Display the new timer
-                chrome.storage.local.set({seconds}); //Save the new value in the storage
-            }
-        }                
-    })
-    document.getElementById('timer-confirm').addEventListener('click', () => {
-        chrome.storage.local.get('seconds', (result) => { // Get previously saved data
-            if (result.seconds) {
-                clearInterval(timerInterval)
-                timerInterval = null
-                timer(result.seconds)
-                displaySettings(false)
-                if (socket.connected && !preferences.private) {
-                    const dataScript = contains("script", "ds:8")
-                    const userData = JSON.parse(dataScript[1].text.match(/(?<=data:).*(?:])/)[0])
-                    let userName = userData[6] || "" 
-                    let userImage = userData[5] || ""
-                    socket.emit('sync_time', {id: meetingId, endTime: Date.now() + result.seconds*1000, senderName: userName, userImage, seconds: result.seconds})
-                } else if (!preferences.private){
-                    console.warn(`[google-timer] Unable to sync time`)
-                    Sentry.captureMessage('Unable to sync time');
-                }
-            }            
+  socket.on("update_time", ({ endTime, senderName, userImage, seconds }) => {
+    let timeRemaining = Math.round((endTime - Date.now()) / 1000); // Get the remaining seconds
+    if (timeRemaining > 0) {
+      // If it is not too late
+      clearInterval(timerInterval); // Reset the timer
+      timerInterval = null;
+      timer(timeRemaining, seconds); // Start the new timer
+      notification(senderName, userImage); // Notify the user
+    }
+  });
+
+  // ----- LISTENERS ----- //
+  document.getElementById("google-timer").addEventListener("mouseover", () => {
+    timerInterval === null && displaySettings(true); // If timer is not set open settings
+  });
+  document.getElementById("google-timer").addEventListener("mouseleave", () => {
+    displaySettings(false);
+  });
+  document.getElementById("timer-stop").addEventListener("click", () => {
+    if (timerInterval !== null || timerInterval !== undefined) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      closeDialog();
+      document.getElementById("time").style.color = "#5f6368";
+      document.getElementById("time").innerHTML = "00:00";
+      displaySettings(true);
+      displayStopButton(false);
+    }
+  });
+  window.addEventListener("keyup", (e) => {
+    // If keys are pressed
+    if (e.target.offsetParent) {
+      if (e.target.offsetParent.id === "google-timer") {
+        // If they are pressed in the plugin
+        clearInterval(timerInterval);
+        timerInterval = null;
+        let hh = document.getElementById("hh").value || 0; // get hh, mm, ss
+        let mm = document.getElementById("mm").value || 0;
+        let ss = document.getElementById("ss").value || 0;
+        let seconds = parseInt(hh) * 3600 + parseInt(mm) * 60 + parseInt(ss); // Get seconds
+        setTimer(seconds); // Display the new timer
+        chrome.storage.local.set({ seconds }); //Save the new value in the storage
+      }
+    }
+  });
+  document.getElementById("timer-confirm").addEventListener("click", () => {
+    chrome.storage.local.get("seconds", (result) => {
+      // Get previously saved data
+      if (result.seconds) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timer(result.seconds);
+        displaySettings(false);
+        if (socket.connected && !preferences.private) {
+          const dataScript = contains("script", "ds:8");
+          const userData = JSON.parse(
+            dataScript[1].text.match(/(?<=data:).*(?:])/)[0]
+          );
+          let userName = userData[6] || "";
+          let userImage = userData[5] || "";
+          socket.emit("sync_time", {
+            id: meetingId,
+            endTime: Date.now() + result.seconds * 1000,
+            senderName: userName,
+            userImage,
+            seconds: result.seconds,
           });
-    })/* TODO: Add in next update, update server backend to handle pause sync
+        } else if (!preferences.private) {
+          console.warn(`[google-timer] Unable to sync time`);
+          Sentry.captureMessage("Unable to sync time");
+        }
+      }
+    });
+  }); /* TODO: Add in next update, update server backend to handle pause sync
     document.getElementById('time').addEventListener('click', () => {
         isPaused = !isPaused
     })  */
-}
+};
 
 const timer = (seconds, totalSeconds) => {
-    clearInterval(timerInterval)
-    timerInterval = null
-    closeDialog()
-    displayStopButton(true)
-    setTimer(preferences.countdown ? seconds : 0) // If countdown show totalTime else show 0
-    var totalTime = totalSeconds || seconds 
-    var isTimeUp = false
-    timerInterval = setInterval(function(){
-        if (!isPaused) {
-            seconds--
-            setTimer(preferences.countdown ? seconds : totalTime - seconds, totalTime)
-    
-            if (seconds <= 0 && !isTimeUp) {
-                isTimeUp = true
-    
-                if (preferences.countdown !== false) {
-                    clearInterval(timerInterval)
-                    timerInterval = null
-                    displayStopButton(false)
-                }
-    
-                document.body.insertAdjacentHTML('beforeend', dialog) // Show dialog
-                document.getElementById('sound').checked = preferences.sound // Show the updated setting
-    
-                dialogTimeout = setTimeout(()=> { // Autoclose the dialog after 30 secs
-                    closeDialog()
-                }, 30000)
-    
-                if (preferences.sound !== false) {               
-                    ringtone.play()
-                    ringtone.loop = true
-                }
-                
-                document.getElementById('timer-dialog-button').addEventListener("click", () => { // Set listener to close dialog
-                    closeDialog()
-                })
-    
-                let attempts = 0 // Count how many times user presses checkbox
-                document.getElementById('sound').addEventListener('change', () => {
-                    let status = document.getElementById('sound').checked
-                    chrome.storage.sync.set({"sound": status});
-                    preferences.sound = status
-                    if (!preferences.sound) {
-                        ringtone.pause()
-                    }
-                    attempts ++
-                    if (attempts >= 4) { // If the user clicks too many times it is probably because he doesn't know how to close the dialog
-                        setTimeout(() => { // Close the dialog and end the sound after 500 milliseconds
-                            closeDialog()
-                        }, 500)                    
-                    }
-                })  
-            }                           
-        }        
-    }, 1000);
-}
+  clearInterval(timerInterval);
+  timerInterval = null;
+  closeDialog();
+  displayStopButton(true);
+  setTimer(preferences.countdown ? seconds : 0); // If countdown show totalTime else show 0
+  var totalTime = totalSeconds || seconds;
+  var isTimeUp = false;
+  timerInterval = setInterval(function () {
+    if (!isPaused) {
+      seconds--;
+      setTimer(
+        preferences.countdown ? seconds : totalTime - seconds,
+        totalTime
+      );
 
-const setTimer = (seconds, totalTime) => {
-    if (seconds >= 0) {
-        let hh = zeroFill(Math.floor(seconds / 3600))
-        let mm = zeroFill(Math.floor(seconds / 60) % 60)
-        let ss = zeroFill(Math.floor((seconds % 60)))
-    
-        if (hh > 0) {
-            document.getElementById('time').innerHTML = `${hh}:${mm}`
-        } else {
-            document.getElementById('time').innerHTML = `${mm}:${ss}`
-        }
-
-        let textStyle = getComputedStyle(document.getElementById('time')).color 
+      if (seconds <= 0 && !isTimeUp) {
+        isTimeUp = true;
 
         if (preferences.countdown !== false) {
-            seconds = totalTime - seconds            
+          clearInterval(timerInterval);
+          timerInterval = null;
+          displayStopButton(false);
         }
 
-        if (seconds/totalTime >= 0.8 && textStyle == "rgb(95, 99, 104)") {
-            document.getElementById('time').style.color = "#d93025"
-        } else if (seconds/totalTime < 0.8 && textStyle !== "rgb(95, 99, 104)") {
-            document.getElementById('time').style.color = "#5f6368"
+        document.body.insertAdjacentHTML("beforeend", dialog); // Show dialog
+        document.getElementById("sound").checked = preferences.sound; // Show the updated setting
+
+        dialogTimeout = setTimeout(() => {
+          // Autoclose the dialog after 30 secs
+          closeDialog();
+        }, 30000);
+
+        if (preferences.sound !== false) {
+          ringtone.play();
+          ringtone.loop = true;
         }
-    }   
-}
+
+        document
+          .getElementById("timer-dialog-button")
+          .addEventListener("click", () => {
+            // Set listener to close dialog
+            closeDialog();
+          });
+
+        let attempts = 0; // Count how many times user presses checkbox
+        document.getElementById("sound").addEventListener("change", () => {
+          let status = document.getElementById("sound").checked;
+          chrome.storage.sync.set({ sound: status });
+          preferences.sound = status;
+          if (!preferences.sound) {
+            ringtone.pause();
+          }
+          attempts++;
+          if (attempts >= 4) {
+            // If the user clicks too many times it is probably because he doesn't know how to close the dialog
+            setTimeout(() => {
+              // Close the dialog and end the sound after 500 milliseconds
+              closeDialog();
+            }, 500);
+          }
+        });
+      }
+    }
+  }, 1000);
+};
+
+const setTimer = (seconds, totalTime) => {
+  if (seconds >= 0) {
+    let hh = zeroFill(Math.floor(seconds / 3600));
+    let mm = zeroFill(Math.floor(seconds / 60) % 60);
+    let ss = zeroFill(Math.floor(seconds % 60));
+
+    if (hh > 0) {
+      document.getElementById("time").innerHTML = `${hh}:${mm}`;
+    } else {
+      document.getElementById("time").innerHTML = `${mm}:${ss}`;
+    }
+
+    let textStyle = getComputedStyle(document.getElementById("time")).color;
+
+    if (preferences.countdown !== false) {
+      seconds = totalTime - seconds;
+    }
+
+    if (seconds / totalTime >= 0.8 && textStyle == "rgb(95, 99, 104)") {
+      document.getElementById("time").style.color = "#d93025";
+    } else if (seconds / totalTime < 0.8 && textStyle !== "rgb(95, 99, 104)") {
+      document.getElementById("time").style.color = "#5f6368";
+    }
+  }
+};
 
 // -- Interval functions -- //
 const checkCallOn = () => {
-    let menu = document.getElementsByClassName('Jrb8ue')
-    if (menu.length > 0) { // If the menu exists we are in a call
-        clearInterval(checkCallOnInterval) // Stop the loop
-        checkCallOffInterval = setInterval(checkCallOff, 1000)        
-        let meetingIdNode = document.getElementsByClassName('SSPGKf p2ZbV')
-        if (meetingIdNode.length) {
-            meetingId = meetingIdNode[0].getAttribute('data-unresolved-meeting-id')
-            
-            if (meetingId) {             
-                main()
-            } else {
-                console.log('[google-timer] Error: Unable to get meeting id')
-                Sentry.captureMessage('Unable to get meeting id');
-            }
-        } else {
-            console.log('[google-timer] Error: Unable to get meeting id')
-            Sentry.captureMessage('Unable to get meeting id');
-        }        
-    }    
-}
+  let menu = document.getElementsByClassName("xPh1xb");
+  if (menu.length > 0) {
+    // If the menu exists we are in a call
+    clearInterval(checkCallOnInterval); // Stop the loop
+    checkCallOffInterval = setInterval(checkCallOff, 1000);
+    let meetingIdNode = document.getElementsByClassName("SSPGKf p2ZbV");
+    if (meetingIdNode.length) {
+      meetingId = meetingIdNode[0].getAttribute("data-unresolved-meeting-id");
+
+      if (meetingId) {
+        main();
+      } else {
+        console.log("[google-timer] Error: Unable to get meeting id");
+        Sentry.captureMessage("Unable to get meeting id");
+      }
+    } else {
+      console.log("[google-timer] Error: Unable to get meeting id");
+      Sentry.captureMessage("Unable to get meeting id");
+    }
+  }
+};
 
 const checkCallOff = () => {
-    let menu = document.getElementsByClassName('Jrb8ue')
-    if (!menu.length) {
-        console.log('[google-timer] Call off')
-        socket.close() // Close the websocket
-        clearInterval(checkCallOffInterval)
-        checkCallOffInterval = null
-        clearInterval(timerInterval)
-        timerInterval = null
-        displayTimer(false)
-    }
-}
+  let menu = document.getElementsByClassName("xPh1xb");
+  if (!menu.length) {
+    console.log("[google-timer] Call off");
+    socket.close(); // Close the websocket
+    clearInterval(checkCallOffInterval);
+    checkCallOffInterval = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    displayTimer(false);
+  }
+};
 
 // -- Switches -- //
-const displayTimer = (bool) => {   
-    if (bool) {
-        document.getElementById('timer-container').style.display = 'flex'
-    } else {
-        document.getElementById('timer-container').style.display = 'none'
-    }    
-}
+const displayTimer = (bool) => {
+  if (bool) {
+    document.getElementById("timer-container").style.display = "flex";
+  } else {
+    document.getElementById("timer-container").style.display = "none";
+  }
+};
 
 const displaySettings = (bool) => {
-    if (bool) {
-        document.getElementById('timer-settings-container').style.display = 'flex'
-        document.getElementById('timer-settings').style.display = 'none'
-        document.getElementById('timer-main-divider').classList.add('settings-open')        
-        document.getElementById('google-timer').classList.add('settings-open')
-    } else {
-        document.getElementById('timer-settings-container').style.display = 'none'
-        document.getElementById('timer-settings').style.display = 'block'
-        document.getElementById('timer-main-divider').classList.remove('settings-open')
-        document.getElementById('google-timer').classList.remove('settings-open')
-    }
-}
+  if (bool) {
+    document.getElementById("timer-settings-container").style.display = "flex";
+    document.getElementById("timer-settings").style.display = "none";
+    document
+      .getElementById("timer-main-divider")
+      .classList.add("settings-open");
+    document.getElementById("google-timer").classList.add("settings-open");
+  } else {
+    document.getElementById("timer-settings-container").style.display = "none";
+    document.getElementById("timer-settings").style.display = "block";
+    document
+      .getElementById("timer-main-divider")
+      .classList.remove("settings-open");
+    document.getElementById("google-timer").classList.remove("settings-open");
+  }
+};
 
 const closeDialog = () => {
-    let dialog = document.getElementById('timer-dialog')
-    if (dialog) {
-        dialog.outerHTML = "";
-        ringtone.pause()
-        clearTimeout(dialogTimeout)
-    }
-}
+  let dialog = document.getElementById("timer-dialog");
+  if (dialog) {
+    dialog.outerHTML = "";
+    ringtone.pause();
+    clearTimeout(dialogTimeout);
+  }
+};
 
 const displayStopButton = (bool) => {
-    if (bool) {
-        document.getElementById('timer-stop').style.display = ""
-        document.getElementById('timer-settings-icon').style.display = "none"
-    } else {
-        document.getElementById('timer-stop').style.display = "none"
-        document.getElementById('timer-settings-icon').style.display = ""
-    }
-    
-}
+  if (bool) {
+    document.getElementById("timer-stop").style.display = "";
+    document.getElementById("timer-settings-icon").style.display = "none";
+  } else {
+    document.getElementById("timer-stop").style.display = "none";
+    document.getElementById("timer-settings-icon").style.display = "";
+  }
+};
 
 const notification = (userName, userImage) => {
-    if (userName) {
-        document.getElementById('timer-message-description').innerHTML = `<b>${userName}</b> ${chrome.i18n.getMessage("timerUpdate")}`
-        document.getElementById('timer-notification-image').src = userImage || ""
-    } else {
-        document.getElementById('timer-message-description').innerHTML = chrome.i18n.getMessage("timerSet")
-    }
-    document.getElementById('timer-notification').style.opacity = 1
-    setTimeout(() => document.getElementById('timer-notification').style.opacity = 0, 20000)
-}
+  if (userName) {
+    document.getElementById(
+      "timer-message-description"
+    ).innerHTML = `<b>${userName}</b> ${chrome.i18n.getMessage("timerUpdate")}`;
+    document.getElementById("timer-notification-image").src = userImage || "";
+  } else {
+    document.getElementById("timer-message-description").innerHTML =
+      chrome.i18n.getMessage("timerSet");
+  }
+  document.getElementById("timer-notification").style.opacity = 1;
+  setTimeout(
+    () => (document.getElementById("timer-notification").style.opacity = 0),
+    20000
+  );
+};
 
 // -- Utility functions -- //
 const contains = (selector, text) => {
-    var elements = document.querySelectorAll(selector);
-    return [].filter.call(elements, function(element) {
-      return RegExp(text).test(element.textContent);
-    });
+  var elements = document.querySelectorAll(selector);
+  return [].filter.call(elements, function (element) {
+    return RegExp(text).test(element.textContent);
+  });
 };
 
 const zeroFill = (n) => {
-    return ('0'+n).slice(-2)
-}
+  return ("0" + n).slice(-2);
+};
 
 // -- HTML and CSS elements -- //
 const timerHtml = `
@@ -367,7 +415,7 @@ const timerHtml = `
         <p class="timer-message-description" id="timer-message-description"></p>
     </div>
 </div>
-`
+`;
 const style = `
 <style id="timer-style">
     .timer-divider {
@@ -574,7 +622,7 @@ const style = `
     .form-switch input:checked + i::before { transform: translate3d(18px, 2px, 0) scale3d(0, 0, 0); }
 
     .form-switch input:checked + i::after { transform: translate3d(22px, 2px, 0); }
-</style>`
+</style>`;
 const dialog = `
 <div id="timer-dialog" style="display: flex; justify-content: center; align-items: center; height: 100%;"> 
     <div style="position: relative; background-color: white; border-radius: 15px; padding: 25px; width: 350px; text-align: center; z-index: 9999; height: fit-content;">
@@ -582,11 +630,15 @@ const dialog = `
         <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="0" y1="17" x2="34" y2="17"><stop  offset="0" style="stop-color:#CC2B5E"/><stop  offset="1" style="stop-color:#753A88"/></linearGradient>
         <path fill="url(#SVGID_1_)" d="M34,3.4L30.6,0L17,13.6L3.4,0L0,3.4L13.6,17L0,30.6L3.4,34L17,20.4L30.6,34l3.4-3.4L20.4,17L34,3.4z"/>
     </svg>
-        <h1 style="font-family: Roboto; margin: 15px; color: #3a3a3a; font-weight: 700; font-size: 55px; margin-bottom: 0;">${chrome.i18n.getMessage("timerElapsed")}</h1>
+        <h1 style="font-family: Roboto; margin: 15px; color: #3a3a3a; font-weight: 700; font-size: 55px; margin-bottom: 0;">${chrome.i18n.getMessage(
+          "timerElapsed"
+        )}</h1>
         <label class="form-switch" style="display: flex; align-items: center; justify-content: center; margin-top: 0;">
             <input type="checkbox" id="sound">    
             <i></i>
-            <h3 style="font-family: Roboto; color: #3a3a3a; font-weight: 300; font-size: 17px;">${chrome.i18n.getMessage("as_1")}</h3>
+            <h3 style="font-family: Roboto; color: #3a3a3a; font-weight: 300; font-size: 17px;">${chrome.i18n.getMessage(
+              "as_1"
+            )}</h3>
             </label>        
     </div>
-</div>`
+</div>`;
